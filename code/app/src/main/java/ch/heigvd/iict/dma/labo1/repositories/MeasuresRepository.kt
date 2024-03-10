@@ -5,9 +5,17 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.map
 import ch.heigvd.iict.dma.labo1.models.*
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.io.BufferedReader
+import java.io.IOException
+import java.io.InputStreamReader
+import java.io.OutputStreamWriter
+import java.net.HttpURLConnection
+import java.net.URL
 import kotlin.system.measureTimeMillis
 
 class MeasuresRepository(private val scope : CoroutineScope,
@@ -53,6 +61,57 @@ class MeasuresRepository(private val scope : CoroutineScope,
 
             val elapsed = measureTimeMillis {
                 Log.e("SendViewModel", "Implement me !!! Send measures to $url") //TODO
+                when (serialisation) {
+                    Serialisation.JSON -> {
+                        val gson = Gson()
+
+                        val measures = _measures.value!!
+
+                        with(URL(url).openConnection() as HttpURLConnection) {
+                            requestMethod = "POST"
+                            setRequestProperty("Content-Type", "application/json; charset=utf-8")
+                            setRequestProperty("User-Agent", "Dorian")
+
+                            try {
+                                // Enable output (sending data to server)
+                                doOutput = true
+
+                                // Write JSON data to the connection's output stream
+                                OutputStreamWriter(outputStream, "UTF-8").use { writer ->
+                                    writer.write(gson.toJson(measures)) //it
+                                    writer.flush()
+                                }
+
+                                // Read the response from the server
+                                BufferedReader(InputStreamReader(inputStream)).use { reader ->
+                                    val response = StringBuilder()
+                                    var line: String?
+                                    while (reader.readLine().also { line = it } != null) {
+                                        response.append(line)
+                                    }
+                                    // Handle response
+                                    val res = gson.fromJson<List<MeasureACK>>(response.toString(), object : TypeToken<List<MeasureACK>>() {}.type)
+
+                                    for (r in res) {
+                                        measures[r.id].status = r.status
+                                    }
+                                    _measures.postValue(measures)
+                                }
+                            } catch (e: IOException) {
+                                e.printStackTrace()
+                            } finally {
+                                disconnect()
+                            }
+                        }
+
+                    }
+                    Serialisation.XML -> {
+
+                    }
+                    Serialisation.PROTOBUF -> {
+
+                    }
+                }
             }
             _requestDuration.postValue(elapsed)
         }
