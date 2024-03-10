@@ -10,6 +10,8 @@ import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import org.jdom2.DocType
+import org.jdom2.Document
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
@@ -17,6 +19,11 @@ import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
 import kotlin.system.measureTimeMillis
+import org.jdom2.Element
+import org.jdom2.input.SAXBuilder
+import org.jdom2.output.XMLOutputter
+import java.io.StringReader
+import java.text.Format
 
 class MeasuresRepository(private val scope : CoroutineScope,
                          private val dtd : String = "https://mobile.iict.ch/measures.dtd",
@@ -106,7 +113,75 @@ class MeasuresRepository(private val scope : CoroutineScope,
 
                     }
                     Serialisation.XML -> {
+                        val rootElement = Element("measures")
+                        val document = Document(rootElement)
 
+                        val measures = _measures.value!!
+
+                        for (measure in measures) {
+                            val measureElement = Element("measure")
+                            measureElement.setAttribute("id", measure.id.toString())
+                            measureElement.setAttribute("status", measure.status.toString())
+
+                            measureElement.addContent(Element("type").addContent(measure.type.toString()))
+                            measureElement.addContent(Element("value").addContent(measure.value.toString()))
+                            measureElement.addContent(Element("data").addContent(measure.date.toString()))
+
+                            rootElement.addContent(measureElement)
+                        }
+
+                        val dtdURL = "https://mobile.iict.ch/measures.dtd"
+                        document.docType = DocType("measures", dtdURL)
+
+                        val format = org.jdom2.output.Format.getPrettyFormat()
+                        format.textMode = org.jdom2.output.Format.TextMode.PRESERVE
+                        val xmlOutputter = XMLOutputter(format)
+
+                        val xmlString = xmlOutputter.outputString(document)
+
+                        with(URL(url).openConnection() as HttpURLConnection) {
+                            requestMethod = "POST"
+                            setRequestProperty("Content-Type", "application/xml; charset=utf-8")
+                            setRequestProperty("User-Agent", "Dorian")
+
+                            try {
+                                // Enable output (sending data to server)
+                                doOutput = true
+
+                                // Write XML data to the connection's output stream
+                                OutputStreamWriter(outputStream, "UTF-8").use { writer ->
+                                    writer.write(xmlString) //it
+                                    writer.flush()
+                                }
+
+                                // Read the response from the server
+                                BufferedReader(InputStreamReader(inputStream)).use { reader ->
+                                    val response = StringBuilder()
+                                    var line: String?
+
+                                    while (reader.readLine().also { line = it } != null) {
+                                        response.append(line)
+                                    }
+
+                                    // Handle response
+                                    val builder = SAXBuilder()
+                                    builder.setFeature("http://xml.org/sax/features/external-general-entities", false);
+                                    val res = builder.build(StringReader(response.toString()))
+
+                                    // Status update
+                                    for (r in res.rootElement.children) {
+                                        val status = Measure.Status.valueOf(r.getAttribute("status").value)
+                                        measures[r.getAttribute("id").intValue].status = status
+                                    }
+
+                                    _measures.postValue(measures)
+                                }
+                            } catch (e: IOException) {
+                                e.printStackTrace()
+                            } finally {
+                                disconnect()
+                            }
+                        }
                     }
                     Serialisation.PROTOBUF -> {
 
