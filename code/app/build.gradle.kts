@@ -72,7 +72,7 @@ dependencies {
     androidTestImplementation("androidx.room:room-testing:2.6.1")
 
     // Import the Firebase BoM
-    /*implementation(platform("com.google.firebase:firebase-bom:32.7.3"))
+    implementation(platform("com.google.firebase:firebase-bom:32.7.3"))
     implementation("com.google.firebase:firebase-messaging")
     implementation("com.google.firebase:firebase-messaging-ktx")*/
 }
