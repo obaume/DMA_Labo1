@@ -2,7 +2,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
-    //id("com.google.gms.google-services")
+    id("com.google.gms.google-services")
 }
 
 
@@ -74,5 +74,5 @@ dependencies {
     // Import the Firebase BoM
     implementation(platform("com.google.firebase:firebase-bom:32.7.3"))
     implementation("com.google.firebase:firebase-messaging")
-    implementation("com.google.firebase:firebase-messaging-ktx")*/
+    implementation("com.google.firebase:firebase-messaging-ktx")
 }
