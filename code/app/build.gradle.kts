@@ -64,6 +64,7 @@ dependencies {
     // Serializations libs
     implementation("org.jdom:jdom2:2.0.6.1")
     implementation("com.google.code.gson:gson:2.10.1")
+    implementation("com.google.protobuf:protobuf-kotlin:3.25.3")
 
     // Room components
     implementation("androidx.room:room-runtime:2.6.1")
