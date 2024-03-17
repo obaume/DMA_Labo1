@@ -27,7 +27,7 @@ public class MessagesService : FirebaseMessagingService() {
             MessagesDatabase.getDatabase(this).messagesDao().insert(message)
         }
 
-        if (remoteMessage.data["message"] == "clear"){
+        if (remoteMessage.data["command"] == "clear"){
             MessagesDatabase.getDatabase(this).messagesDao().deleteAllMessage()
         }
 

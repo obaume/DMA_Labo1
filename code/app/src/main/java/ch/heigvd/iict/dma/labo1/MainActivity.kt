@@ -40,14 +40,12 @@ class MainActivity : AppCompatActivity() {
         setupActionBarWithNavController(navController, appBarConfiguration)
         navView.setupWithNavController(navController)
 
-        FirebaseMessaging.getInstance().subscribeToTopic("Topic")
+        FirebaseMessaging.getInstance().subscribeToTopic("all")
                 .addOnCompleteListener { task ->
-                    var message = "Subscribe to topic"
                     if (!task.isSuccessful) {
-                        message = "Failed to subscribe to topic"
+                        Log.d(TAG, "Failed to subscribe to topic", task.exception)
                     }
-                    Log.d(TAG, message)
-                    Toast.makeText(baseContext, message, Toast.LENGTH_SHORT).show()
+                    Log.d(TAG, "Subscribe to topic")
         }
     }
 }
