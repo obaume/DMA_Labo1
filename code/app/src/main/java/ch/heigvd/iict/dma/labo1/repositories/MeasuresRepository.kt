@@ -1,5 +1,6 @@
 package ch.heigvd.iict.dma.labo1.repositories
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.map
@@ -102,10 +103,8 @@ class MeasuresRepository(private val scope : CoroutineScope,
                     })
 
                     try {
-                        // Enable output (sending data to server)
                         doOutput = true
 
-                        // Write JSON data to the connection's output stream
                         var newOutPutStream = outputStream
 
                         if (compression == Compression.DEFLATE) {
@@ -123,7 +122,6 @@ class MeasuresRepository(private val scope : CoroutineScope,
                                 val rootElement = Element("measures")
                                 val document = Document(rootElement)
 
-                                // Measure parsing to XML
                                 for (measure in measureList) {
                                     val measureElement = Element("measure")
                                     measureElement.setAttribute("id", measure.id.toString())
@@ -186,7 +184,7 @@ class MeasuresRepository(private val scope : CoroutineScope,
                                         while (reader.readLine().also { line = it } != null) {
                                             response.append(line)
                                         }
-                                        // Handle response
+
                                         val res = gson.fromJson<List<MeasureACK>>(response.toString(), object : TypeToken<List<MeasureACK>>() {}.type)
 
                                         for (r in res) {
@@ -204,12 +202,10 @@ class MeasuresRepository(private val scope : CoroutineScope,
                                             response.append(line)
                                         }
 
-                                        // Handle response
                                         val builder = SAXBuilder()
                                         builder.setFeature("http://xml.org/sax/features/external-general-entities", false);
                                         val res = builder.build(StringReader(response.toString()))
 
-                                        // Status update
                                         for (r in res.rootElement.children) {
                                             val status = Measure.Status.valueOf(r.getAttribute("status").value)
                                             measureList[r.getAttribute("id").intValue].status = status
@@ -222,7 +218,6 @@ class MeasuresRepository(private val scope : CoroutineScope,
                                     DataInputStream(newInputStream).use { reader ->
                                         val bytes = reader.readBytes()
 
-                                        // Handle response
                                         val measures = _measures.value!!
                                         val result = MeasuresAck.parseFrom(bytes)
 
@@ -235,7 +230,7 @@ class MeasuresRepository(private val scope : CoroutineScope,
                                 }
                             }
                         } else {
-                            // TODO print message
+                            Log.e("SendFragment", "Error : ${getHeaderField("X-Error")}")
                         }
                     } catch (e: IOException) {
                         e.printStackTrace()
